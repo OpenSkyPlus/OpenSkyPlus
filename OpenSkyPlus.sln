@@ -1,0 +1,48 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34408.163
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "OpenSkyPlusLoggerInitializer", "OpenSkyPlusLogger\OpenSkyPlusLoggerInitializer.shproj", "{14DF6B17-4549-4E1F-9483-48C4BC81F994}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenSkyPlus", "OpenSkyPlus.csproj", "{4985F59F-13B9-4790-92E3-04C13F3BE396}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "OpenSkyPlusPlugin", "OpenSkyPlusPlugin\OpenSkyPlusPlugin.shproj", "{CF968DEB-9218-4469-8BB2-063E5F0F841E}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "AbstractOpenSkyPlusApi", "AbstractOpenSkyPlusApi\AbstractOpenSkyPlusApi.shproj", "{03716C64-7C66-46B2-BD04-ECD60877984B}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "OpenSkyPlusApi", "OpenSkyPlusApi\OpenSkyPlusApi.shproj", "{BC828735-8D19-4120-AA65-4FA4F2DEDD30}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "OpenSkyPlusConfiguration", "OpenSkyPlusConfiguration\OpenSkyPlusConfiguration.shproj", "{4110B3C2-3106-4844-9BB7-4FBC21A8F684}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "OpenSkyPlusInjectors", "OpenSkyPlusInjectors\OpenSkyPlusInjectors.shproj", "{DDB3ABDD-BC06-41BE-9D43-7852601C735F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4985F59F-13B9-4790-92E3-04C13F3BE396}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4985F59F-13B9-4790-92E3-04C13F3BE396}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4985F59F-13B9-4790-92E3-04C13F3BE396}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4985F59F-13B9-4790-92E3-04C13F3BE396}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F4A62050-4D73-493D-9E57-28984E3C8CBA}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		AbstractOpenSkyPlusApi\AbstractOpenSkyPlusApi.projitems*{03716c64-7c66-46b2-bd04-ecd60877984b}*SharedItemsImports = 13
+		OpenSkyPlusLogger\OpenSkyPlusLogger.projitems*{14df6b17-4549-4e1f-9483-48c4bc81f994}*SharedItemsImports = 13
+		OpenSkyPlusConfiguration\OpenSkyPlusConfiguration.projitems*{4110b3c2-3106-4844-9bb7-4fbc21a8f684}*SharedItemsImports = 13
+		AbstractOpenSkyPlusApi\AbstractOpenSkyPlusApi.projitems*{4985f59f-13b9-4790-92e3-04c13f3be396}*SharedItemsImports = 5
+		OpenSkyPlusApi\OpenSkyPlusApi.projitems*{4985f59f-13b9-4790-92e3-04c13f3be396}*SharedItemsImports = 5
+		OpenSkyPlusConfiguration\OpenSkyPlusConfiguration.projitems*{4985f59f-13b9-4790-92e3-04c13f3be396}*SharedItemsImports = 5
+		OpenSkyPlusApi\OpenSkyPlusApi.projitems*{bc828735-8d19-4120-aa65-4fa4f2dedd30}*SharedItemsImports = 13
+		OpenSkyPlusPlugin\OpenSkyPlusPlugin.projitems*{cf968deb-9218-4469-8bb2-063e5f0f841e}*SharedItemsImports = 13
+		OpenSkyPlusInjectors\OpenSkyPlusInjectors.projitems*{ddb3abdd-bc06-41be-9d43-7852601c735f}*SharedItemsImports = 13
+	EndGlobalSection
+EndGlobal

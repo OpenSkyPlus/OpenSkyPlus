@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>bc828735-8d19-4120-aa65-4fa4f2dedd30</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>OpenSkyPlusApi</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)DeviceControls.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)OpenSkyPlusApi.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)OpenSkyPlusApiException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)OpenSkyPlusShotData.cs" />
+  </ItemGroup>
+</Project>
