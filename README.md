@@ -35,7 +35,8 @@ There is an EXE [installer](https://github.com/OpenSkyPlus/OpenSkyPlus/releases)
 
 When choosing where to install OpenSkyPlus, it will default to 
 `C:\Program Files\[Launch Monitor]`
-==Make sure you change [Launch Monitor] to the directory where you have your launch monitor software installed!==
+> [!IMPORTANT]
+> Make sure you change [Launch Monitor] to the directory where you have your launch monitor software installed!
 
 When prompted about replacing old plugins, it is recommended that you choose 'Y'.
 
@@ -99,15 +100,17 @@ Some of the high priority items to do are as below:
 <br>
 *A. For anyone having issues, it's recommended to visit the SGT Simulator Golf Tour Discord server. There is a channel just for your launch monitor.
 There, you can submit issues by including your debugging log and someone will help you.*
+
+*Legitimate bugs can be reported on the [issues](https://github.com/OpenSkyPlus/OpenSkyPlus/issues) page. "It's not working for me" issues will be auto-closed.*
 <br>
 <br>
 **Q. How do I get a debugging log?**
 <br>
 *A. Close your launch monitor software.*
 *Locate the OSP config file (C:\Program Files\\[Launch Monitor]\BepInEx\plugins\OpenSkyPlus\settings.cfg)*
-*Change ==LogLevel = Info== to ==LogLevel = Debug==*
+*Change ```LogLevel = Info``` to ```LogLevel = Debug```*
 *Restart your launch monitor software, recreate your issue, then open the log file (C:\Program Files\[Launch Monitor]\BepInEx\plugins\OpenSkyPlus\Log.txt)*
-*Send it to the Discord channel.*
+*Send it with your bug description..*
 <br>
 <br>
 **Q. What do the other settings do?**
@@ -116,17 +119,18 @@ There, you can submit issues by including your debugging log and someone will he
 
 *Most items are self explainatory except:*
 
-*- LaunchMonitor is the name of the launch monitor brand you're using and should be in PascalCase (JustLikeThis). 
+- *```LaunchMonitor``` is the name of the launch monitor brand you're using and should be in PascalCase (JustLikeThis). 
 This is to avoid OSP using any trademarked names in the codebase.*
 
-*- ShotConfidence is how aggressive OSP will be in discarding "junk" shots or misreads from the monitor.*
+- *```ShotConfidence``` is how aggressive OSP will be in discarding "junk" shots or misreads from the monitor.*
 <br>
 <br>
-***Forgiving** will discard anything your launch monitor likely would.*
+
+***Forgiving*** *will discard anything your launch monitor likely would.*
 <br>
-***Strict** will report nearly any ball movement whatsoever*
+***Strict*** *will report nearly any ball movement whatsoever.*
 <br>
-***Normal** is inbetwen and recommended.*
+***Normal*** *is inbetwen and recommended.*
 
 *Plugins should have their own configurations and are typically located in the root of the plugin folder.*
 
