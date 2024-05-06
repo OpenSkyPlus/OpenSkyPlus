@@ -194,7 +194,7 @@ public class OpenSkyPlusUi : MonoBehaviour
 
     private static void CreateBottomButtons()
     {
-        string[] buttonTexts = ["Force Normal Mode", "Force Putting Mode", "Force Monitor Arm", "Resend Last Shot"];
+        string[] buttonTexts = ["Force Normal Mode", "Force Putting Mode", "Force Monitor Arm", "Resend Last Shot", "Toggle Left/Right", "Soft Network Reset"];
         var popupRectTransform = _popupConsole.GetComponent<RectTransform>();
         var buttonHeight = popupRectTransform.rect.height / 10;
 
@@ -244,6 +244,12 @@ public class OpenSkyPlusUi : MonoBehaviour
                         break;
                     case "Resend Last Shot":
                         apiInstance.Value.ReplayLastShot();
+                        break;
+                    case "Toggle Left/Right":
+                        apiInstance.Value.ToggleHandedness();
+                        break;
+                    case "Soft Network Reset":
+                        apiInstance.Value.SoftNetworkReset();
                         break;
                 }
             });
@@ -303,7 +309,8 @@ public class OpenSkyPlusUi : MonoBehaviour
         var consoleTextObject = new GameObject("ConsoleText", typeof(Text));
         consoleTextObject.transform.SetParent(consoleTextContainer.transform, false);
         _consoleText = consoleTextObject.GetComponent<Text>();
-        _consoleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        //_consoleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        _consoleText.font = Font.CreateDynamicFontFromOSFont("Courier New", 12);
         _consoleText.fontSize = 14;
         _consoleText.color = Color.white;
         _consoleText.alignment = TextAnchor.UpperLeft;

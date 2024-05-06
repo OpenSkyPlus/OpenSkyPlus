@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using BepInEx.Logging;
 using OpenSkyPlusApi;
 
@@ -14,13 +15,15 @@ public delegate void NotificationMonitorStatusChange();
 
 public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 {
-    public static readonly string SupportedVersion = "4.4.6";
+    public static readonly string SupportedVersion = "4.4.7";
 
     private static ManualLogSource _logger;
 
     private static readonly Lazy<OpenSkyPlusApi> Instance = new(() => new OpenSkyPlusApi());
     private static int _batteryLevel;
     private readonly OpenSkyPlusConfiguration.Configuration _config = OpenSkyPlusConfiguration.Config;
+
+    private Handedness _handedness = Handedness.Right;
 
     private OpenSkyPlusApi()
     {
@@ -84,7 +87,7 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
     {
         try
         {
-            if (DeviceControls.Armed)
+            if (DeviceControls.Armed == true)
                 return true;
             if (DeviceControls.ArmMonitor())
                 Ready_();
@@ -132,6 +135,15 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         OnShot?.Invoke();
     }
 
+    public override Handedness? GetHandedness()
+    {
+        return DeviceControls.GetHandedness();
+    }
+
+    public override Handedness? SetHandedness(Handedness handedness)
+    {
+        return DeviceControls.SetHandedness(handedness);
+    }
 
     private void SetLastShot(ShotData shot)
     {
@@ -152,10 +164,12 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 
     private void Connected_()
     {
+        _logger.LogInfo("Device connected");
+
         if (Connected)
             return;
 
-        if (!DeviceControls.Armed)
+        if (DeviceControls.Armed is false)
             DeviceControls.DisarmMonitor();
         Connected = true;
         OnConnect?.Invoke();
@@ -163,6 +177,8 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 
     private void Disconnected()
     {
+        _logger.LogInfo("Device disconnected");
+
         if (!Connected) return;
 
         Connected = false;
@@ -185,10 +201,9 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         OnNotReady?.Invoke();
     }
 
-
     private void ReceiveShot(object launchMonitorShot)
     {
-        var wasArmed = DeviceControls.Armed;
+        var wasArmed = DeviceControls.Armed == true;
         try
         {
             DeviceControls.DisarmMonitor();
@@ -304,13 +319,12 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         if (shot.Launch.TotalSpeed == 0)
             return false;
 
-
         float launchConfidence;
 
-        if (GetInstance().GetShotMode() == ShotMode.Putting)
+        var shotMode = GetInstance().GetShotMode();
+        if (shotMode == ShotMode.Putting)
         {
             // club data is not returned in putting mode
-
             if (shot.Launch.LaunchAngleConfidence == 0 && shot.Launch.HorizontalAngleConfidence == 0)
                 launchConfidence = 0;
             else if (shot.Launch.LaunchAngleConfidence == 0 || shot.Launch.HorizontalAngleConfidence == 0)
@@ -323,6 +337,7 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
                 launchConfidence = 0;
 
             // spin data is not returned in putting mode
+            _logger.LogDebug($"[{shotMode}] Confidence: launch={launchConfidence}. Mode: {_config.AppSettings.ShotConfidence}");
 
             return _config.AppSettings.ShotConfidence switch
             {
@@ -345,12 +360,10 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         else
             clubConfidence = 0;
 
-        if (
-            (shot.Launch.LaunchAngle == 0 || shot.Launch.HorizontalAngle == 0) &&
+        if ((shot.Launch.LaunchAngle == 0 || shot.Launch.HorizontalAngle == 0) &&
             (shot.Launch.LaunchAngleConfidence == 0 || shot.Launch.HorizontalAngleConfidence == 0))
             launchConfidence = 0;
-        else if (
-            (shot.Launch.LaunchAngleConfidence < 1 || shot.Launch.HorizontalAngleConfidence < 1) &&
+        else if ((shot.Launch.LaunchAngleConfidence < 1 || shot.Launch.HorizontalAngleConfidence < 1) &&
             shot.Launch.LaunchAngleConfidence > 0 && shot.Launch.HorizontalAngleConfidence > 0)
             launchConfidence = 0.5f;
         else if (shot.Launch.LaunchAngleConfidence.Equals(1) && shot.Launch.HorizontalAngleConfidence.Equals(1))
@@ -370,36 +383,39 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         float[] confidences = [clubConfidence, launchConfidence, spinConfidence];
         var averageConfidence = confidences.Average();
 
+        _logger.LogDebug($"[{shotMode}] Confidence:: club={clubConfidence}, launch={launchConfidence}, spin={spinConfidence}.  Avg:{averageConfidence}. Confidence Mode: {_config.AppSettings.ShotConfidence}");
+
         return _config.AppSettings.ShotConfidence switch
         {
             "Forgiving" => averageConfidence >= 0.75f,
-            "Strict" => averageConfidence <= 0,
+            "Strict" => averageConfidence > 0,
             _ => averageConfidence >= 0.25f
         };
     }
 
     private void LogShot(ShotData shot)
     {
-        _logger.LogInfo($"{GetShotMode()} Shot Received:\n");
-        _logger.LogInfo("ClubData");
-        _logger.LogInfo("----");
-        _logger.LogInfo($"Head Speed: {shot.Club.HeadSpeed}");
-        _logger.LogInfo($"Head Speed Confidence: {shot.Club.HeadSpeedConfidence}\n");
-        _logger.LogInfo("LaunchData");
-        _logger.LogInfo("------");
-        _logger.LogInfo($"Horizontal Angle: {shot.Launch.HorizontalAngle}");
-        _logger.LogInfo($"Horizontal Angle Confidence: {shot.Launch.HorizontalAngleConfidence}");
-        _logger.LogInfo($"Vertical Angle: {shot.Launch.LaunchAngle}");
-        _logger.LogInfo($"Vertical Angle Confidence: {shot.Launch.LaunchAngleConfidence}");
-        _logger.LogInfo($"Total Speed: {shot.Launch.TotalSpeed}");
-        _logger.LogInfo($"Total Speed Confidence: {shot.Launch.TotalSpeedConfidence}\n");
-        _logger.LogInfo("SpinData");
-        _logger.LogInfo("----");
-        _logger.LogInfo($"Spin Axis: {shot.Spin.SpinAxis}");
-        _logger.LogInfo($"Backspin: {shot.Spin.Backspin}");
-        _logger.LogInfo($"Side Spin: {shot.Spin.SideSpin}");
-        _logger.LogInfo($"Total Spin spin: {shot.Spin.TotalSpin}");
-        _logger.LogInfo($"Measurement Confidence: {shot.Spin.MeasurementConfidence}");
+        StringBuilder sb = new StringBuilder($"{GetShotMode()} Shot Received:");
+        sb.AppendLine("ClubData");
+        sb.AppendLine("----");
+        sb.AppendLine($"\tHead Speed: {shot.Club.HeadSpeed}");
+        sb.AppendLine($"\tHead Speed Confidence: {shot.Club.HeadSpeedConfidence}");
+        sb.AppendLine("LaunchData");
+        sb.AppendLine("------");
+        sb.AppendLine($"\tHorizontal Angle: {shot.Launch.HorizontalAngle}");
+        sb.AppendLine($"\tHorizontal Angle Confidence: {shot.Launch.HorizontalAngleConfidence}");
+        sb.AppendLine($"\tVertical Angle: {shot.Launch.LaunchAngle}");
+        sb.AppendLine($"\tVertical Angle Confidence: {shot.Launch.LaunchAngleConfidence}");
+        sb.AppendLine($"\tTotal Speed: {shot.Launch.TotalSpeed}");
+        sb.AppendLine($"\tTotal Speed Confidence: {shot.Launch.TotalSpeedConfidence}\n");
+        sb.AppendLine("SpinData");
+        sb.AppendLine("----");
+        sb.AppendLine($"\tSpin Axis: {shot.Spin.SpinAxis}");
+        sb.AppendLine($"\tBackspin: {shot.Spin.Backspin}");
+        sb.AppendLine($"\tSide Spin: {shot.Spin.SideSpin}");
+        sb.AppendLine($"\tTotal Spin spin: {shot.Spin.TotalSpin}");
+        sb.AppendLine($"\tMeasurement Confidence: {shot.Spin.MeasurementConfidence}");
+        _logger.LogInfo(sb.ToString());
     }
 
     public void LogToOpenSkyPlus(string message, object level)
@@ -428,7 +444,6 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
             throw new Exception($"Failed to translate logging request to {_logger.GetType().Name}: {ex}");
         }
     }
-
 
     /// <summary>
     ///     Logs all the raw data from a shot.
@@ -696,6 +711,19 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 
         // Shot valid data. Skip this since these values are well understood
 
+    }
+
+    internal void ToggleHandedness()
+    {
+        var newHandedness = _handedness == Handedness.Left ? Handedness.Right : Handedness.Left;
+        var newMode = DeviceControls.SetHandedness(newHandedness);
+        _handedness = newHandedness;
+        _logger.LogDebug($"Changing handedness to {newMode}");
+    }
+
+    internal void SoftNetworkReset()
+    {
+        DeviceControls.SoftResetNetwork();
     }
 }
 

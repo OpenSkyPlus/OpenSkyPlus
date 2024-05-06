@@ -242,6 +242,26 @@ public abstract class AbstractOpenSkyPlusApi
             LogToOpenSkyPlus($"Failed to register {action} Action:\n{ex}", LogLevels.Warning);
         }
     }
+
+    public virtual Handedness? GetHandedness()
+    {
+        return (Handedness?)_apiInstance.GetType()
+            .GetMethod("GetHandedness", BindingFlags.Public | BindingFlags.Instance)?
+            .Invoke(_apiInstance, null) ?? null;
+    }
+
+    public virtual Handedness? SetHandedness(Handedness handedness)
+    {
+        // Need type conversion from abtract type to OSP type
+        var methodInfo = _apiInstance.GetType().GetMethod("SetHandedness");
+        var handednessParam = methodInfo.GetParameters()[0];
+        var enumVals = handednessParam.ParameterType.GetEnumValues();
+
+        // Would be cleaner to have a mapping pis this is good enough since enums have same values in both implementation
+        return (Handedness?)_apiInstance.GetType()
+            .GetMethod("SetHandedness", BindingFlags.Public | BindingFlags.Instance)?
+            .Invoke(_apiInstance, [enumVals.GetValue((int)handedness)]) ?? null;
+    }
 }
 
 public class ShotData
@@ -255,7 +275,15 @@ public class ShotData
 public class ClubData
 {
     public virtual float HeadSpeed { get; set; }
+
     public virtual float HeadSpeedConfidence { get; set; }
+
+    // TODO: those are calculated, WIP
+    //public virtual float AngleOfAttack { get; set; }
+
+    //public virtual float FaceToTarget { get; set; }
+
+    //public virtual float Path { get; set; }
 }
 
 public class LaunchData
@@ -297,4 +325,10 @@ public enum LogLevels
     Debug,
     Warning,
     Error
+}
+
+public enum Handedness
+{
+    Right,
+    Left
 }

@@ -1,0 +1,14 @@
+{
+  "profiles": {
+    "OpenSkyPlus": {
+      "commandName": "Project",
+      "workingDirectory": "C:\\SkyTrak"
+    },
+    "SkyTrak.exe": {
+      "commandName": "Executable",
+      "executablePath": "C:\\SkyTrak\\SkyTrak.exe",
+      "workingDirectory": "C:\\SkyTrak",
+      "nativeDebugging": true
+    }
+  }
+}
