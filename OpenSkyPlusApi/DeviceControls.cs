@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using BepInEx.Logging;
 using HarmonyLib;
 using OpenSkyPlusApi;
@@ -275,15 +276,17 @@ internal static class DeviceControls
         }
         finally
         {
-            // TODO: determine why RefreshConnection was there
-            //RefreshConnection();
+            if (_config.AppSettings.RefreshConnectionAfterModeSwitch)
+            {
+                RefreshConnection();
+            }
             if (wasArmed) ArmMonitor();
         }
     }
 
-    public static void RefreshConnection(bool disconnectOnly = false)
+    public static async void RefreshConnection(bool disconnectOnly = false)
     {
-        _logger.LogInfo($"RefreshConnection");
+        _logger.LogInfo($"RefreshConnection: pause/unpause");
 
         // Pause SW
         _launchMonitorController.GetType()
@@ -293,6 +296,8 @@ internal static class DeviceControls
         // Do not call twice if only want to pause (disconnect)
         if (!disconnectOnly)
         {
+            await Task.Delay(200);
+
             // Resume SW
             _launchMonitorController.GetType()
                 .InvokeMember("JNCPBMDPIKB", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance,

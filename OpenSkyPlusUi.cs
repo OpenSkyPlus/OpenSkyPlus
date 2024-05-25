@@ -10,6 +10,7 @@ namespace OpenSkyPlus;
 public class OpenSkyPlusUi : MonoBehaviour
 {
     private static GameObject _statusCircle;
+    private static GameObject _modeText;
     private static GameObject _popupConsole;
     private static string _consoleTextPlaceholder = string.Empty;
     private static Text _consoleText;
@@ -79,6 +80,7 @@ public class OpenSkyPlusUi : MonoBehaviour
             circleImage.color = _pluginLoaded ? Color.green : Color.yellow;
         };
         CreateStatusBoxLabel(statusBox.transform);
+        _modeText = CreateModeText(statusBox.transform);
 
         BuildPopupConsole();
         statusBox.AddComponent<Button>().onClick.AddListener(TogglePopupConsole);
@@ -138,6 +140,22 @@ public class OpenSkyPlusUi : MonoBehaviour
             1 - paddingHeight / parent.GetComponent<RectTransform>().rect.height);
         rectTransform.offsetMin = new Vector2(paddingWidth, paddingHeight);
         rectTransform.offsetMax = new Vector2(-paddingWidth, -paddingHeight);
+    }
+
+    private static GameObject CreateModeText(Transform parent)
+    {
+        var labelText = new GameObject("ModeText", typeof(RectTransform));
+        labelText.transform.SetParent(parent, false);
+        var text = labelText.AddComponent<Text>();
+        text.text = "Normal";
+        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        text.color = Color.white;
+        text.alignment = TextAnchor.MiddleRight;
+        text.horizontalOverflow = HorizontalWrapMode.Overflow;
+
+        // TODO: revisit positionning
+
+        return labelText;
     }
 
     private static void BuildPopupConsole()
@@ -356,6 +374,18 @@ public class OpenSkyPlusUi : MonoBehaviour
             return;
         _consoleText.text = _consoleTextPlaceholder;
         _consoleScrollRect.verticalNormalizedPosition = 0f;
+    }
+
+    /// <summary>
+    /// Update mode text with current shot mode (Normal, Putting)
+    /// </summary>
+    /// <param name="mode"></param>
+    internal static void SetShotMode(string mode)
+    {
+        if (_modeText != null)
+        {
+            _modeText.GetComponent<Text>().text = mode;
+        }
     }
 }
 

@@ -16,14 +16,12 @@ public delegate void NotificationMonitorStatusChange();
 public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 {
     public static readonly string SupportedVersion = "4.4.7";
-
     private static ManualLogSource _logger;
-
-    private static readonly Lazy<OpenSkyPlusApi> Instance = new(() => new OpenSkyPlusApi());
     private static int _batteryLevel;
     private readonly OpenSkyPlusConfiguration.Configuration _config = OpenSkyPlusConfiguration.Config;
+    private static Handedness _handedness = Handedness.Right;
 
-    private Handedness _handedness = Handedness.Right;
+    private static readonly Lazy<OpenSkyPlusApi> Instance = new(() => new OpenSkyPlusApi());
 
     private OpenSkyPlusApi()
     {
@@ -39,6 +37,7 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
     }
 
     private static bool Connected { get; set; }
+
     private static bool Ready { get; set; }
 
     private static int BatteryLevel
@@ -113,6 +112,8 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 
     public bool SetShotMode(ShotMode mode)
     {
+        OpenSkyPlusUi.SetShotMode(mode.ToString());
+
         var newMode = DeviceControls.SetShotMode(mode);
         ShotMode = newMode;
         _logger.LogDebug($"Changing shot mode to {mode}. Result: {ShotMode}");

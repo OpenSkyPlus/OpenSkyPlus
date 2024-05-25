@@ -8,7 +8,8 @@ public interface IOpenSkyPlusConfiguration
         string launchMonitor,
         string launchMonitorAppPath,
         string pluginPath,
-        string shotConfidence)
+        string shotConfidence,
+        bool refreshConnectionAfterModeSwitch)
     {
         public string LogPath { get; set; } = logPath;
         public string LogLevel { get; set; } = logLevel;
@@ -16,5 +17,6 @@ public interface IOpenSkyPlusConfiguration
         public string LaunchMonitorAppPath { get; set; } = launchMonitorAppPath;
         public string PluginPath { get; set; } = pluginPath;
         public string ShotConfidence { get; set; } = shotConfidence;
+        public bool RefreshConnectionAfterModeSwitch { get; set; } = refreshConnectionAfterModeSwitch;
     }
 }
