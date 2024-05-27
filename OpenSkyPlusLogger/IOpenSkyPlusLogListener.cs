@@ -30,16 +30,17 @@ public class OpenSkyPlusLogListener : ILogListener
         LogWriter.WriteLine(FormatLogLine(eventArgs)); // Logs to disk
     }
 
-    private string FormatLogLine(LogEventArgs logEventArgs)
-    {
-        return $"[{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} | {logEventArgs.Level,-10}:{logEventArgs.Source.SourceName, 20}] {logEventArgs.Data}";
-    }
-
     public void Dispose()
     {
         FlushTimer?.Dispose();
         LogWriter?.Flush();
         LogWriter?.Dispose();
+    }
+
+    private string FormatLogLine(LogEventArgs logEventArgs)
+    {
+        return
+            $"[{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} | {logEventArgs.Level,-10}:{logEventArgs.Source.SourceName,20}] {logEventArgs.Data}";
     }
 
     ~OpenSkyPlusLogListener()

@@ -3,12 +3,10 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 using BepInEx.Logging;
 using HarmonyLib;
 using OpenSkyPlusApi;
-using UnityEngine;
 
 namespace OpenSkyPlus;
 
@@ -111,6 +109,7 @@ internal static class DeviceControls
             {
                 _logger.LogDebug($"Exception during license check:\n{ex}");
             }
+
             return false;
         }
     }
@@ -148,7 +147,8 @@ internal static class DeviceControls
 
         //DumpType("_launchMonitorController", _launchMonitorController.GetType());
 
-        var isLeftHandednessProperty = _launchMonitorController.GetType().GetProperty("EAOIHLFKBDI", BindingFlags.NonPublic | BindingFlags.Instance);
+        var isLeftHandednessProperty = _launchMonitorController.GetType()
+            .GetProperty("EAOIHLFKBDI", BindingFlags.NonPublic | BindingFlags.Instance);
         var isLeftHandedness = isLeftHandednessProperty.GetValue(_launchMonitorController);
         HandednessValue = Convert.ToBoolean(isLeftHandedness) ? Handedness.Left : Handedness.Right;
         _logger.LogInfo($"IsHandednessLeft: {isLeftHandedness}");
@@ -156,43 +156,47 @@ internal static class DeviceControls
 
     private static void DumpType(string member, Type type)
     {
-        StringBuilder sb = new StringBuilder($"Dumping type of {member}: {type.FullDescription()}:" + Environment.NewLine);
+        var sb = new StringBuilder($"Dumping type of {member}: {type.FullDescription()}:" + Environment.NewLine);
         sb.AppendLine("Interfaces:");
-        foreach (Type t in type.GetInterfaces())
+        foreach (var t in type.GetInterfaces())
         {
             sb.AppendLine($"\t{t}");
             sb.AppendLine("\tProperties:");
-            foreach (var property in t.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-            {
-                sb.AppendLine($"\t\t{property.PropertyType,30} {property.Name,30} - Info: {(property.CanRead ? "Read" : "")} {(property.CanWrite ? "Write" : "")} {(property.Attributes)}");
-            }
+            foreach (var property in t.GetProperties(BindingFlags.Public | BindingFlags.NonPublic |
+                                                     BindingFlags.Instance | BindingFlags.Static))
+                sb.AppendLine(
+                    $"\t\t{property.PropertyType,30} {property.Name,30} - Info: {(property.CanRead ? "Read" : "")} {(property.CanWrite ? "Write" : "")} {property.Attributes}");
             sb.AppendLine("\tFields:");
-            foreach (var field in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-            {
-                sb.AppendLine($"\t\t{field.FieldType,30} {field.Name,30} - Info: {(field.IsPrivate ? "Private" : "")} {(field.IsPublic ? "Public" : "")}");
-            }
+            foreach (var field in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
+                                              BindingFlags.Static))
+                sb.AppendLine(
+                    $"\t\t{field.FieldType,30} {field.Name,30} - Info: {(field.IsPrivate ? "Private" : "")} {(field.IsPublic ? "Public" : "")}");
         }
+
         sb.AppendLine("Properties:");
-        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-        {
-            sb.AppendLine($"\t{property.PropertyType,30} {property.Name,30} - Info: {(property.CanRead ? "Read" : "")} {(property.CanWrite ? "Write" : "")}");
-        }
+        foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic |
+                                                    BindingFlags.Instance | BindingFlags.Static))
+            sb.AppendLine(
+                $"\t{property.PropertyType,30} {property.Name,30} - Info: {(property.CanRead ? "Read" : "")} {(property.CanWrite ? "Write" : "")}");
         sb.AppendLine("Methods:");
-        foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+        foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
+                                               BindingFlags.Static))
         {
             var parameters = method.GetParameters();
             var parameterDescriptions = string.Join
-                (", ", method.GetParameters()
-                             .Select(x => x.ParameterType + " " + x.Name)
-                             .ToArray());
+            (", ", method.GetParameters()
+                .Select(x => x.ParameterType + " " + x.Name)
+                .ToArray());
 
-            sb.AppendLine($"\t{method.ReturnType,30} {method.Name,30}({parameterDescriptions,50}) - Info: {(method.IsPrivate ? "Private" : "Public"),10} {(method.IsStatic ? "Static" : "Instance"),10}");
+            sb.AppendLine(
+                $"\t{method.ReturnType,30} {method.Name,30}({parameterDescriptions,50}) - Info: {(method.IsPrivate ? "Private" : "Public"),10} {(method.IsStatic ? "Static" : "Instance"),10}");
         }
+
         sb.AppendLine("Fields:");
-        foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-        {
-            sb.AppendLine($"\t{field.FieldType,30} {field.Name,30} - Info: {(field.IsPrivate ? "Private" : "")} {(field.IsPublic ? "Public" : "")}");
-        }
+        foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance |
+                                             BindingFlags.Static))
+            sb.AppendLine(
+                $"\t{field.FieldType,30} {field.Name,30} - Info: {(field.IsPrivate ? "Private" : "")} {(field.IsPublic ? "Public" : "")}");
         _logger.LogInfo(sb);
     }
 
@@ -200,7 +204,7 @@ internal static class DeviceControls
 
     public static bool ArmMonitor()
     {
-        _logger.LogInfo($"ArmMonitor");
+        _logger.LogInfo("ArmMonitor");
 
         // public void MDOFGLDBEIK
         try
@@ -222,7 +226,7 @@ internal static class DeviceControls
 
     public static bool DisarmMonitor()
     {
-        _logger.LogInfo($"DisarmMonitor");
+        _logger.LogInfo("DisarmMonitor");
 
         // public void JDIMANKGGMF
         try
@@ -276,17 +280,14 @@ internal static class DeviceControls
         }
         finally
         {
-            if (_config.AppSettings.RefreshConnectionAfterModeSwitch)
-            {
-                RefreshConnection();
-            }
+            if (_config.AppSettings.RefreshConnectionAfterModeSwitch) RefreshConnection();
             if (wasArmed) ArmMonitor();
         }
     }
 
     public static async void RefreshConnection(bool disconnectOnly = false)
     {
-        _logger.LogInfo($"RefreshConnection: pause/unpause");
+        _logger.LogInfo("RefreshConnection: pause/unpause");
 
         // Pause SW
         _launchMonitorController.GetType()
@@ -319,7 +320,7 @@ internal static class DeviceControls
             _logger.LogInfo($"SetHandedness to {handedness} skipped because already in proper mode");
             return HandednessValue;
         }
-        
+
         _logger.LogInfo($"SetHandedness: {handedness}");
 
         var methodInfo = _launchMonitorWrapper.GetType().GetMethod("JNPKHHIIAGD");
@@ -344,6 +345,7 @@ internal static class DeviceControls
                         null, _launchMonitorWrapper, [enumVals.GetValue(0)]);
                     break;
             }
+
             HandednessValue = handedness;
         }
         catch (Exception ex)
@@ -354,12 +356,13 @@ internal static class DeviceControls
         {
             if (wasArmed) ArmMonitor();
         }
+
         return HandednessValue;
     }
 
     internal static bool SoftResetNetwork()
     {
-        _logger.LogInfo($"SoftReset network");
+        _logger.LogInfo("SoftReset network");
 
         // public void CKLGICEOKAN
         try

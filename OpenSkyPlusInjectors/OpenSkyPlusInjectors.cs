@@ -104,7 +104,7 @@ public static class OpenSkyPlusApiInjector
     {
         MessageMonitorDisconnected?.Invoke();
     }
-    
+
     private static void DeviceConnectedPatch()
     {
         try

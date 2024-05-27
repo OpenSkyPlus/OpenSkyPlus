@@ -1,6 +1,4 @@
 ﻿using System;
-using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -126,17 +124,15 @@ public class OpenSkyPlusUi : MonoBehaviour
         osp.transform.SetParent(parent, false);
         var image = osp.AddComponent<Image>();
 
-        Texture2D spriteTexture = new Texture2D(10, 10);
+        var spriteTexture = new Texture2D(10, 10);
         spriteTexture.LoadImage(OpenSkyPlus.logo);
-        image.sprite = Sprite.Create(spriteTexture, new Rect(0, 0, spriteTexture.width, spriteTexture.height), new Vector2(0, 0));
-        if (image.sprite == null)
-        {
-            LogToConsole("Error loading sprite from embedded resources");
-        }
+        image.sprite = Sprite.Create(spriteTexture, new Rect(0, 0, spriteTexture.width, spriteTexture.height),
+            new Vector2(0, 0));
+        if (image.sprite == null) LogToConsole("Error loading sprite from embedded resources");
 
         var rectTransform = image.GetComponent<RectTransform>();
         rectTransform.anchorMin = new Vector2(2f / 3f + 0.01f, 0.01f);
-        rectTransform.anchorMax = new Vector2(1 - 0.01f, 1-0.01f);
+        rectTransform.anchorMax = new Vector2(1 - 0.01f, 1 - 0.01f);
         rectTransform.sizeDelta = new Vector2(0, 0);
         rectTransform.pivot = new Vector2(0, 0);
     }
@@ -157,8 +153,8 @@ public class OpenSkyPlusUi : MonoBehaviour
         var rectTransform = labelText.GetComponent<RectTransform>();
         var paddingWidth = parent.GetComponent<RectTransform>().rect.width * 0.02f;
         var paddingHeight = parent.GetComponent<RectTransform>().rect.height * 0.02f;
-        rectTransform.anchorMin = new Vector2(1f/3f, 0);
-        rectTransform.anchorMax = new Vector2(2f/3f, 0);
+        rectTransform.anchorMin = new Vector2(1f / 3f, 0);
+        rectTransform.anchorMax = new Vector2(2f / 3f, 0);
         rectTransform.sizeDelta = new Vector2(0, parent.GetComponent<RectTransform>().sizeDelta.y);
         rectTransform.pivot = new Vector2(0, 0);
 
@@ -219,7 +215,11 @@ public class OpenSkyPlusUi : MonoBehaviour
 
     private static void CreateBottomButtons()
     {
-        string[] buttonTexts = ["Force Normal Mode", "Force Putting Mode", "Force Monitor Arm", "Resend Last Shot", "Toggle Left/Right", "Soft Network Reset"];
+        string[] buttonTexts =
+        [
+            "Force Normal Mode", "Force Putting Mode", "Force Monitor Arm", "Resend Last Shot", "Toggle Left/Right",
+            "Soft Network Reset"
+        ];
         var popupRectTransform = _popupConsole.GetComponent<RectTransform>();
         var buttonHeight = popupRectTransform.rect.height / 10;
 
@@ -335,7 +335,7 @@ public class OpenSkyPlusUi : MonoBehaviour
         consoleTextObject.transform.SetParent(consoleTextContainer.transform, false);
         _consoleText = consoleTextObject.GetComponent<Text>();
         //_consoleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        _consoleText.font = Font.CreateDynamicFontFromOSFont("Courier New", 12);
+        _consoleText.font = Font.CreateDynamicFontFromOSFont("Courier New", 14);
         _consoleText.fontSize = 14;
         _consoleText.color = Color.white;
         _consoleText.alignment = TextAnchor.UpperLeft;
@@ -384,15 +384,12 @@ public class OpenSkyPlusUi : MonoBehaviour
     }
 
     /// <summary>
-    /// Update mode text with current shot mode (Normal, Putting)
+    ///     Update mode text with current shot mode (Normal, Putting)
     /// </summary>
     /// <param name="mode"></param>
     internal static void SetShotMode(string mode)
     {
-        if (_modeText != null)
-        {
-            _modeText.GetComponent<Text>().text = mode;
-        }
+        if (_modeText != null) _modeText.GetComponent<Text>().text = mode;
     }
 }
 
