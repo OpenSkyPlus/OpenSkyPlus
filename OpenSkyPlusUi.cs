@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -120,26 +122,23 @@ public class OpenSkyPlusUi : MonoBehaviour
 
     private static void CreateStatusBoxLabel(Transform parent)
     {
-        var labelText = new GameObject("OpenSkyPlus", typeof(RectTransform));
-        labelText.transform.SetParent(parent, false);
-        var text = labelText.AddComponent<Text>();
-        text.text = "OpenSkyPlus";
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        text.color = Color.white;
-        text.alignment = TextAnchor.MiddleRight;
-        text.horizontalOverflow = HorizontalWrapMode.Overflow;
+        var osp = new GameObject("OpenSkyPlus", typeof(RectTransform));
+        osp.transform.SetParent(parent, false);
+        var image = osp.AddComponent<Image>();
 
-        var rectTransform = labelText.GetComponent<RectTransform>();
-        var paddingWidth = parent.GetComponent<RectTransform>().rect.width * 0.02f;
-        var paddingHeight = parent.GetComponent<RectTransform>().rect.height * 0.02f;
-        rectTransform.anchorMin = new Vector2(1f / 3f + paddingWidth / parent
-                .GetComponent<RectTransform>().rect.width,
-            0 + paddingHeight / parent.GetComponent<RectTransform>().rect.height);
-        rectTransform.anchorMax = new Vector2(1 - paddingWidth / parent
-                .GetComponent<RectTransform>().rect.width,
-            1 - paddingHeight / parent.GetComponent<RectTransform>().rect.height);
-        rectTransform.offsetMin = new Vector2(paddingWidth, paddingHeight);
-        rectTransform.offsetMax = new Vector2(-paddingWidth, -paddingHeight);
+        Texture2D spriteTexture = new Texture2D(10, 10);
+        spriteTexture.LoadImage(OpenSkyPlus.logo);
+        image.sprite = Sprite.Create(spriteTexture, new Rect(0, 0, spriteTexture.width, spriteTexture.height), new Vector2(0, 0));
+        if (image.sprite == null)
+        {
+            LogToConsole("Error loading sprite from embedded resources");
+        }
+
+        var rectTransform = image.GetComponent<RectTransform>();
+        rectTransform.anchorMin = new Vector2(2f / 3f + 0.01f, 0.01f);
+        rectTransform.anchorMax = new Vector2(1 - 0.01f, 1-0.01f);
+        rectTransform.sizeDelta = new Vector2(0, 0);
+        rectTransform.pivot = new Vector2(0, 0);
     }
 
     private static GameObject CreateModeText(Transform parent)
@@ -149,11 +148,19 @@ public class OpenSkyPlusUi : MonoBehaviour
         var text = labelText.AddComponent<Text>();
         text.text = "Normal";
         text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+        text.fontSize = 20;
         text.color = Color.white;
         text.alignment = TextAnchor.MiddleRight;
         text.horizontalOverflow = HorizontalWrapMode.Overflow;
+        text.alignment = TextAnchor.MiddleLeft;
 
-        // TODO: revisit positionning
+        var rectTransform = labelText.GetComponent<RectTransform>();
+        var paddingWidth = parent.GetComponent<RectTransform>().rect.width * 0.02f;
+        var paddingHeight = parent.GetComponent<RectTransform>().rect.height * 0.02f;
+        rectTransform.anchorMin = new Vector2(1f/3f, 0);
+        rectTransform.anchorMax = new Vector2(2f/3f, 0);
+        rectTransform.sizeDelta = new Vector2(0, parent.GetComponent<RectTransform>().sizeDelta.y);
+        rectTransform.pivot = new Vector2(0, 0);
 
         return labelText;
     }
