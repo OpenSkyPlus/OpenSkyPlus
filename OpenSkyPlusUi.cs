@@ -149,6 +149,7 @@ public class OpenSkyPlusUi : MonoBehaviour
         text.alignment = TextAnchor.MiddleRight;
         text.horizontalOverflow = HorizontalWrapMode.Overflow;
         text.alignment = TextAnchor.MiddleLeft;
+        text.resizeTextMaxSize = (int)(parent.GetComponent<RectTransform>().sizeDelta.x / 3f);
 
         var rectTransform = labelText.GetComponent<RectTransform>();
         var paddingWidth = parent.GetComponent<RectTransform>().rect.width * 0.02f;
