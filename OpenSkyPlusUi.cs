@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using TMPro;
+using UnityEngine.TextCore.LowLevel;
 
 namespace OpenSkyPlus;
 
@@ -53,7 +56,8 @@ public class OpenSkyPlusUi : MonoBehaviour
         _canvas.gameObject.AddComponent<GraphicRaycaster>();
 
         var statusBox = CreateStatusBox(_canvas.transform);
-        _statusCircle = CreateStatusCircle(statusBox.transform);
+        var horzLayout = statusBox.GetComponent<HorizontalLayoutGroup>();
+        _statusCircle = CreateStatusCircle(horzLayout.transform);
         OpenSkyPlusApiInjector.MessageOpenSkyPlusReady += () =>
         {
             if (_statusCircle == null) return;
@@ -79,8 +83,9 @@ public class OpenSkyPlusUi : MonoBehaviour
             var circleImage = _statusCircle.GetComponent<Image>();
             circleImage.color = _pluginLoaded ? Color.green : Color.yellow;
         };
-        CreateStatusBoxLabel(statusBox.transform);
-        _modeText = CreateModeText(statusBox.transform);
+        _modeText = CreateModeText(horzLayout.transform);
+
+        CreateOspImage(horzLayout.transform);
 
         BuildPopupConsole();
         statusBox.AddComponent<Button>().onClick.AddListener(TogglePopupConsole);
@@ -88,10 +93,18 @@ public class OpenSkyPlusUi : MonoBehaviour
 
     private static GameObject CreateStatusBox(Transform parent)
     {
-        var statusBox = new GameObject("MainMenuStatusBox", typeof(RectTransform));
+        var statusBox = new GameObject("MainMenuStatusBox", typeof(RectTransform), typeof(HorizontalLayoutGroup));
         statusBox.transform.SetParent(parent, false);
+        
         var image = statusBox.AddComponent<Image>();
         image.color = Color.black;
+
+        var horzLayout = statusBox.GetComponent<HorizontalLayoutGroup>();
+        horzLayout.childAlignment = TextAnchor.MiddleCenter;
+        horzLayout.childControlWidth = true;
+        horzLayout.childForceExpandWidth = true;
+        horzLayout.spacing = 5;
+        horzLayout.padding = new RectOffset(2, 2, 2, 2);
 
         var rectTransform = statusBox.GetComponent<RectTransform>();
         rectTransform.anchorMin = new Vector2(0, 0);
@@ -106,60 +119,64 @@ public class OpenSkyPlusUi : MonoBehaviour
     {
         var circle = new GameObject("ApiStatusLight", typeof(RectTransform));
         circle.transform.SetParent(parent, false);
+
+        var layoutElement = circle.AddComponent<LayoutElement>();
+        layoutElement.preferredWidth = 100;
+
         var circleRenderer = circle.AddComponent<UiCircle>();
         circleRenderer.color = OpenSkyPlusApi.IsLoaded() ? Color.green : Color.red;
-
-        var rectTransform = circle.GetComponent<RectTransform>();
-        rectTransform.anchorMin = new Vector2(0, 0.5f);
-        rectTransform.anchorMax = new Vector2(1f / 3f, 0.5f);
-        rectTransform.sizeDelta = new Vector2(0, parent.GetComponent<RectTransform>().sizeDelta.y / 3f);
-        rectTransform.anchoredPosition = new Vector2(rectTransform.sizeDelta.x / 2, 0);
 
         return circle;
     }
 
-    private static void CreateStatusBoxLabel(Transform parent)
+    private static void CreateOspImage(Transform parent)
     {
         var osp = new GameObject("OpenSkyPlus", typeof(RectTransform));
         osp.transform.SetParent(parent, false);
-        var image = osp.AddComponent<Image>();
 
+        var layoutElement = osp.AddComponent<LayoutElement>();
+        layoutElement.preferredWidth = 100;
+
+        var image = osp.AddComponent<Image>();
         var spriteTexture = new Texture2D(10, 10);
         spriteTexture.LoadImage(OpenSkyPlus.logo);
         image.sprite = Sprite.Create(spriteTexture, new Rect(0, 0, spriteTexture.width, spriteTexture.height),
             new Vector2(0, 0));
         if (image.sprite == null) LogToConsole("Error loading sprite from embedded resources");
-
-        var rectTransform = image.GetComponent<RectTransform>();
-        rectTransform.anchorMin = new Vector2(2f / 3f + 0.01f, 0.01f);
-        rectTransform.anchorMax = new Vector2(1 - 0.01f, 1 - 0.01f);
-        rectTransform.sizeDelta = new Vector2(0, 0);
-        rectTransform.pivot = new Vector2(0, 0);
     }
 
     private static GameObject CreateModeText(Transform parent)
     {
-        var labelText = new GameObject("ModeText", typeof(RectTransform));
-        labelText.transform.SetParent(parent, false);
-        var text = labelText.AddComponent<Text>();
-        text.text = "Normal";
-        text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-        text.fontSize = 20;
-        text.color = Color.white;
-        text.alignment = TextAnchor.MiddleRight;
-        text.horizontalOverflow = HorizontalWrapMode.Overflow;
-        text.alignment = TextAnchor.MiddleLeft;
-        text.resizeTextMaxSize = (int)(parent.GetComponent<RectTransform>().sizeDelta.x / 3f);
+        var modeText = new GameObject(" ", typeof(RectTransform));
+        modeText.transform.SetParent(parent, true);
 
-        var rectTransform = labelText.GetComponent<RectTransform>();
-        var paddingWidth = parent.GetComponent<RectTransform>().rect.width * 0.02f;
-        var paddingHeight = parent.GetComponent<RectTransform>().rect.height * 0.02f;
+        var layoutElement = modeText.AddComponent<LayoutElement>();
+        layoutElement.preferredWidth = 100;
+
+        var tmp = modeText.AddComponent<TextMeshProUGUI>();
+        tmp.text = "Normal";
+        tmp.color = Color.white;
+        tmp.enableAutoSizing = true;
+        tmp.horizontalAlignment = HorizontalAlignmentOptions.Center | HorizontalAlignmentOptions.Left;
+        tmp.verticalAlignment = VerticalAlignmentOptions.Middle;
+        tmp.enableWordWrapping = false;
+        // Get paths to OS Fonts
+        string[] fontPaths = Font.GetPathsToOSFonts();
+        // Create new font object from one of those paths
+        var font = fontPaths.Where(f => f.ToLowerInvariant().Contains("arial.ttf")).First();
+        LogToConsole($"Font: {font}");
+        Font osFont = new Font(font);
+        // Create new dynamic font asset
+        TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(osFont, 90, 9, GlyphRenderMode.SDFAA, 1024, 1024);
+        tmp.font = fontAsset;
+
+        var rectTransform = modeText.GetComponent<RectTransform>();
         rectTransform.anchorMin = new Vector2(1f / 3f, 0);
         rectTransform.anchorMax = new Vector2(2f / 3f, 0);
         rectTransform.sizeDelta = new Vector2(0, parent.GetComponent<RectTransform>().sizeDelta.y);
         rectTransform.pivot = new Vector2(0, 0);
 
-        return labelText;
+        return modeText;
     }
 
     private static void BuildPopupConsole()
@@ -390,7 +407,7 @@ public class OpenSkyPlusUi : MonoBehaviour
     /// <param name="mode"></param>
     internal static void SetShotMode(string mode)
     {
-        if (_modeText != null) _modeText.GetComponent<Text>().text = mode;
+        if (_modeText != null) _modeText.GetComponent<TextMeshProUGUI>().text = mode;
     }
 }
 
