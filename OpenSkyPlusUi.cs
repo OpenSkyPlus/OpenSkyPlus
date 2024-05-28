@@ -121,7 +121,7 @@ public class OpenSkyPlusUi : MonoBehaviour
         circle.transform.SetParent(parent, false);
 
         var layoutElement = circle.AddComponent<LayoutElement>();
-        layoutElement.preferredWidth = 100;
+        layoutElement.preferredWidth = 40;
 
         var circleRenderer = circle.AddComponent<UiCircle>();
         circleRenderer.color = OpenSkyPlusApi.IsLoaded() ? Color.green : Color.red;
