@@ -108,6 +108,7 @@ internal static class DeviceControls
             catch (Exception ex)
             {
                 _logger.LogDebug($"Exception during license check:\n{ex}");
+                return false;
             }
 
             return false;
