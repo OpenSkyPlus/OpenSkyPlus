@@ -178,9 +178,9 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 
     private void Disconnected()
     {
-        _logger.LogInfo("Device disconnected");
-
         if (!Connected) return;
+
+        _logger.LogInfo("Device disconnected");
 
         Connected = false;
         OnDisconnect?.Invoke();
