@@ -352,7 +352,6 @@ public class OpenSkyPlusUi : MonoBehaviour
         var consoleTextObject = new GameObject("ConsoleText", typeof(Text));
         consoleTextObject.transform.SetParent(consoleTextContainer.transform, false);
         _consoleText = consoleTextObject.GetComponent<Text>();
-        //_consoleText.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
         _consoleText.font = Font.CreateDynamicFontFromOSFont("Courier New", 14);
         _consoleText.fontSize = 14;
         _consoleText.color = Color.white;

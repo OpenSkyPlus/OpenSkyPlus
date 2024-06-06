@@ -104,6 +104,7 @@ internal static class DeviceControls
                     _logger.LogInfo("Play and Improve license is valid");
                     return true;
                 }
+
             }
             catch (Exception ex)
             {
@@ -123,7 +124,7 @@ internal static class DeviceControls
 
     private static void InitializeLaunchMonitorWrapper()
     {
-        _logger.LogInfo("InitializeLaunchMonitorWrapper");
+        _logger.LogDebug("InitializeLaunchMonitorWrapper");
 
         var launchMonitorWrapperType =
             AccessTools.TypeByName($"{_config.AppSettings.LaunchMonitor}Wrapper.EONIOHDNGND");
@@ -136,7 +137,7 @@ internal static class DeviceControls
 
     private static void InitializeLaunchMonitorController()
     {
-        _logger.LogInfo("InitializeLaunchMonitorController");
+        _logger.LogDebug("InitializeLaunchMonitorController");
 
         var securityWrapperInitializerType = AccessTools.TypeByName("SecurityWrapperInitializer");
         var securityWrapperInitializerProp = securityWrapperInitializerType.GetProperty("KGJFDOMIPBN");
@@ -205,7 +206,7 @@ internal static class DeviceControls
 
     public static bool ArmMonitor()
     {
-        _logger.LogInfo("ArmMonitor");
+        _logger.LogDebug("ArmMonitor");
 
         // public void MDOFGLDBEIK
         try
@@ -227,7 +228,7 @@ internal static class DeviceControls
 
     public static bool DisarmMonitor()
     {
-        _logger.LogInfo("DisarmMonitor");
+        _logger.LogDebug("DisarmMonitor");
 
         // public void JDIMANKGGMF
         try
@@ -309,7 +310,7 @@ internal static class DeviceControls
 
     internal static Handedness? GetHandedness()
     {
-        _logger.LogInfo($"GetHandedness: {HandednessValue}");
+        _logger.LogDebug($"GetHandedness: {HandednessValue}");
 
         return HandednessValue;
     }
@@ -318,7 +319,7 @@ internal static class DeviceControls
     {
         if (HandednessValue == handedness)
         {
-            _logger.LogInfo($"SetHandedness to {handedness} skipped because already in proper mode");
+            _logger.LogDebug($"SetHandedness to {handedness} skipped because already in proper mode");
             return HandednessValue;
         }
 
