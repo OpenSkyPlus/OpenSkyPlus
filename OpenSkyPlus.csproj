@@ -75,7 +75,5 @@
   <Import Project="OpenSkyPlusApi\OpenSkyPlusApi.projitems" Label="Shared" />
   
   <Import Project="OpenSkyPlusConfiguration\OpenSkyPlusConfiguration.projitems" Label="Shared" />
-  
- 
 
 </Project>
