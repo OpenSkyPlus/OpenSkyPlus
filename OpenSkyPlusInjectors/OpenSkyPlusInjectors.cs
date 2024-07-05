@@ -68,7 +68,7 @@ public static class OpenSkyPlusApiInjector
             _logger.LogDebug("Device Ready");
             MessageDeviceReady?.Invoke(_logger);
             MessageMonitorConnected?.Invoke();
-            if (!DeviceControls.Armed)
+            if (DeviceControls.Armed is false)
                 DeviceControls.DisarmMonitor();
         }
         catch
@@ -104,7 +104,7 @@ public static class OpenSkyPlusApiInjector
     {
         MessageMonitorDisconnected?.Invoke();
     }
-    
+
     private static void DeviceConnectedPatch()
     {
         try

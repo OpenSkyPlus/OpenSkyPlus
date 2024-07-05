@@ -45,7 +45,7 @@ public static class OpenSkyPlusPluginLoader
                 LoadPlugin(pluginFile[0]);
             else
                 _logger.LogWarning($"Appropriately named dll not found in plugin subdirectory.\n"
-                                  + $"Corresponding DLL should be named {pluginName}.dll");
+                                   + $"Corresponding DLL should be named {pluginName}.dll");
         }
     }
 
@@ -63,8 +63,8 @@ public static class OpenSkyPlusPluginLoader
                 {
                     var interfaceType = type.BaseType;
                     var pluginInstance = Activator.CreateInstance(type);
-                    var versionField = (pluginInstance.GetType().BaseType?
-                        .GetField("ApiVersion", BindingFlags.Public | BindingFlags.Static)) ?? 
+                    var versionField = pluginInstance.GetType().BaseType?
+                                           .GetField("ApiVersion", BindingFlags.Public | BindingFlags.Static) ??
                                        throw new MissingFieldException("Plugin is missing ApiVersion");
                     var version = (string)versionField.GetValue(null) ?? "";
                     foundInterface = true;
@@ -98,8 +98,8 @@ public static class OpenSkyPlusPluginLoader
                     else
                     {
                         _logger.LogWarning($"Couldn't initialize plugin due to version mismatch.\n +"
-                                          + $"Expecting version: {OpenSkyPlusApi.GetApiVersion()}\n"
-                                          + $"Plugin version: {version}");
+                                           + $"Expecting version: {OpenSkyPlusApi.GetApiVersion()}\n"
+                                           + $"Plugin version: {version}");
                     }
                 }
 

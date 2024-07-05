@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading;
 using BepInEx;
@@ -24,8 +25,9 @@ public class OpenSkyPlusLogListener : ILogListener
     {
         if (eventArgs.Source.SourceName != PluginInfo.PLUGIN_GUID || LogLevel < eventArgs.Level)
             return;
-        OpenSkyPlusUi.LogToConsole(eventArgs.ToString()); // Logs to the UI console
-        LogWriter.WriteLine(eventArgs.ToString()); // Logs to disk
+
+        OpenSkyPlusUi.LogToConsole(FormatLogLine(eventArgs)); // Logs to the UI console
+        LogWriter.WriteLine(FormatLogLine(eventArgs)); // Logs to disk
     }
 
     public void Dispose()
@@ -33,6 +35,12 @@ public class OpenSkyPlusLogListener : ILogListener
         FlushTimer?.Dispose();
         LogWriter?.Flush();
         LogWriter?.Dispose();
+    }
+
+    private string FormatLogLine(LogEventArgs logEventArgs)
+    {
+        return
+            $"[{DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff")} | {logEventArgs.Level,-10}:{logEventArgs.Source.SourceName,20}] {logEventArgs.Data}";
     }
 
     ~OpenSkyPlusLogListener()

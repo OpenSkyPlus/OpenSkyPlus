@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using BepInEx.Logging;
 using OpenSkyPlusApi;
 
@@ -14,12 +15,12 @@ public delegate void NotificationMonitorStatusChange();
 
 public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 {
-    public static readonly string SupportedVersion = "4.4.6";
-
+    public static readonly string SupportedVersion = "4.4.7";
     private static ManualLogSource _logger;
+    private static int _batteryLevel;
+    private static Handedness _handedness = Handedness.Right;
 
     private static readonly Lazy<OpenSkyPlusApi> Instance = new(() => new OpenSkyPlusApi());
-    private static int _batteryLevel;
     private readonly OpenSkyPlusConfiguration.Configuration _config = OpenSkyPlusConfiguration.Config;
 
     private OpenSkyPlusApi()
@@ -36,6 +37,7 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
     }
 
     private static bool Connected { get; set; }
+
     private static bool Ready { get; set; }
 
     private static int BatteryLevel
@@ -84,7 +86,7 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
     {
         try
         {
-            if (DeviceControls.Armed)
+            if (DeviceControls.Armed == true)
                 return true;
             if (DeviceControls.ArmMonitor())
                 Ready_();
@@ -110,6 +112,8 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 
     public bool SetShotMode(ShotMode mode)
     {
+        OpenSkyPlusUi.SetShotMode(mode.ToString());
+
         var newMode = DeviceControls.SetShotMode(mode);
         ShotMode = newMode;
         _logger.LogDebug($"Changing shot mode to {mode}. Result: {ShotMode}");
@@ -132,6 +136,15 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         OnShot?.Invoke();
     }
 
+    public override Handedness? GetHandedness()
+    {
+        return DeviceControls.GetHandedness();
+    }
+
+    public override Handedness? SetHandedness(Handedness handedness)
+    {
+        return DeviceControls.SetHandedness(handedness);
+    }
 
     private void SetLastShot(ShotData shot)
     {
@@ -152,10 +165,12 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 
     private void Connected_()
     {
+        _logger.LogInfo("Device connected");
+
         if (Connected)
             return;
 
-        if (!DeviceControls.Armed)
+        if (DeviceControls.Armed is false)
             DeviceControls.DisarmMonitor();
         Connected = true;
         OnConnect?.Invoke();
@@ -164,6 +179,8 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
     private void Disconnected()
     {
         if (!Connected) return;
+
+        _logger.LogInfo("Device disconnected");
 
         Connected = false;
         OnDisconnect?.Invoke();
@@ -185,10 +202,9 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         OnNotReady?.Invoke();
     }
 
-
     private void ReceiveShot(object launchMonitorShot)
     {
-        var wasArmed = DeviceControls.Armed;
+        var wasArmed = DeviceControls.Armed == true;
         try
         {
             DeviceControls.DisarmMonitor();
@@ -304,13 +320,12 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         if (shot.Launch.TotalSpeed == 0)
             return false;
 
-
         float launchConfidence;
 
-        if (GetInstance().GetShotMode() == ShotMode.Putting)
+        var shotMode = GetInstance().GetShotMode();
+        if (shotMode == ShotMode.Putting)
         {
             // club data is not returned in putting mode
-
             if (shot.Launch.LaunchAngleConfidence == 0 && shot.Launch.HorizontalAngleConfidence == 0)
                 launchConfidence = 0;
             else if (shot.Launch.LaunchAngleConfidence == 0 || shot.Launch.HorizontalAngleConfidence == 0)
@@ -323,6 +338,8 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
                 launchConfidence = 0;
 
             // spin data is not returned in putting mode
+            _logger.LogDebug(
+                $"[{shotMode}] Confidence: launch={launchConfidence}. Mode: {_config.AppSettings.ShotConfidence}");
 
             return _config.AppSettings.ShotConfidence switch
             {
@@ -345,13 +362,11 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         else
             clubConfidence = 0;
 
-        if (
-            (shot.Launch.LaunchAngle == 0 || shot.Launch.HorizontalAngle == 0) &&
+        if ((shot.Launch.LaunchAngle == 0 || shot.Launch.HorizontalAngle == 0) &&
             (shot.Launch.LaunchAngleConfidence == 0 || shot.Launch.HorizontalAngleConfidence == 0))
             launchConfidence = 0;
-        else if (
-            (shot.Launch.LaunchAngleConfidence < 1 || shot.Launch.HorizontalAngleConfidence < 1) &&
-            shot.Launch.LaunchAngleConfidence > 0 && shot.Launch.HorizontalAngleConfidence > 0)
+        else if ((shot.Launch.LaunchAngleConfidence < 1 || shot.Launch.HorizontalAngleConfidence < 1) &&
+                 shot.Launch.LaunchAngleConfidence > 0 && shot.Launch.HorizontalAngleConfidence > 0)
             launchConfidence = 0.5f;
         else if (shot.Launch.LaunchAngleConfidence.Equals(1) && shot.Launch.HorizontalAngleConfidence.Equals(1))
             launchConfidence = 1;
@@ -370,36 +385,40 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         float[] confidences = [clubConfidence, launchConfidence, spinConfidence];
         var averageConfidence = confidences.Average();
 
+        _logger.LogDebug(
+            $"[{shotMode}] Confidence:: club={clubConfidence}, launch={launchConfidence}, spin={spinConfidence}.  Avg:{averageConfidence}. Confidence Mode: {_config.AppSettings.ShotConfidence}");
+
         return _config.AppSettings.ShotConfidence switch
         {
             "Forgiving" => averageConfidence >= 0.75f,
-            "Strict" => averageConfidence <= 0,
+            "Strict" => averageConfidence > 0,
             _ => averageConfidence >= 0.25f
         };
     }
 
     private void LogShot(ShotData shot)
     {
-        _logger.LogInfo($"{GetShotMode()} Shot Received:\n");
-        _logger.LogInfo("ClubData");
-        _logger.LogInfo("----");
-        _logger.LogInfo($"Head Speed: {shot.Club.HeadSpeed}");
-        _logger.LogInfo($"Head Speed Confidence: {shot.Club.HeadSpeedConfidence}\n");
-        _logger.LogInfo("LaunchData");
-        _logger.LogInfo("------");
-        _logger.LogInfo($"Horizontal Angle: {shot.Launch.HorizontalAngle}");
-        _logger.LogInfo($"Horizontal Angle Confidence: {shot.Launch.HorizontalAngleConfidence}");
-        _logger.LogInfo($"Vertical Angle: {shot.Launch.LaunchAngle}");
-        _logger.LogInfo($"Vertical Angle Confidence: {shot.Launch.LaunchAngleConfidence}");
-        _logger.LogInfo($"Total Speed: {shot.Launch.TotalSpeed}");
-        _logger.LogInfo($"Total Speed Confidence: {shot.Launch.TotalSpeedConfidence}\n");
-        _logger.LogInfo("SpinData");
-        _logger.LogInfo("----");
-        _logger.LogInfo($"Spin Axis: {shot.Spin.SpinAxis}");
-        _logger.LogInfo($"Backspin: {shot.Spin.Backspin}");
-        _logger.LogInfo($"Side Spin: {shot.Spin.SideSpin}");
-        _logger.LogInfo($"Total Spin spin: {shot.Spin.TotalSpin}");
-        _logger.LogInfo($"Measurement Confidence: {shot.Spin.MeasurementConfidence}");
+        var sb = new StringBuilder($"{GetShotMode()} Shot Received:");
+        sb.AppendLine("ClubData");
+        sb.AppendLine("----");
+        sb.AppendLine($"\tHead Speed: {shot.Club.HeadSpeed}");
+        sb.AppendLine($"\tHead Speed Confidence: {shot.Club.HeadSpeedConfidence}");
+        sb.AppendLine("LaunchData");
+        sb.AppendLine("------");
+        sb.AppendLine($"\tHorizontal Angle: {shot.Launch.HorizontalAngle}");
+        sb.AppendLine($"\tHorizontal Angle Confidence: {shot.Launch.HorizontalAngleConfidence}");
+        sb.AppendLine($"\tVertical Angle: {shot.Launch.LaunchAngle}");
+        sb.AppendLine($"\tVertical Angle Confidence: {shot.Launch.LaunchAngleConfidence}");
+        sb.AppendLine($"\tTotal Speed: {shot.Launch.TotalSpeed}");
+        sb.AppendLine($"\tTotal Speed Confidence: {shot.Launch.TotalSpeedConfidence}\n");
+        sb.AppendLine("SpinData");
+        sb.AppendLine("----");
+        sb.AppendLine($"\tSpin Axis: {shot.Spin.SpinAxis}");
+        sb.AppendLine($"\tBackspin: {shot.Spin.Backspin}");
+        sb.AppendLine($"\tSide Spin: {shot.Spin.SideSpin}");
+        sb.AppendLine($"\tTotal Spin spin: {shot.Spin.TotalSpin}");
+        sb.AppendLine($"\tMeasurement Confidence: {shot.Spin.MeasurementConfidence}");
+        _logger.LogInfo(sb.ToString());
     }
 
     public void LogToOpenSkyPlus(string message, object level)
@@ -429,7 +448,6 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         }
     }
 
-
     /// <summary>
     ///     Logs all the raw data from a shot.
     ///     Useful for understanding what we are looking at. We probably don't need it anymore,
@@ -439,23 +457,23 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
     {
         var Shot = shot.GetType();
 
-        object FDDDFMHPPEP = Shot.GetField("FDDDFMHPPEP",
+        var FDDDFMHPPEP = Shot.GetField("FDDDFMHPPEP",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(shot);
 
-        object GGEGJMKCNOP = Shot.GetField("GGEGJMKCNOP",
+        var GGEGJMKCNOP = Shot.GetField("GGEGJMKCNOP",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(shot);
 
-        object MHLDAHLDJFE = Shot.GetField("MHLDAHLDJFE",
+        var MHLDAHLDJFE = Shot.GetField("MHLDAHLDJFE",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(shot);
 
-        object LDLMHJGLBDF = Shot.GetField("LDLMHJGLBDF",
+        var LDLMHJGLBDF = Shot.GetField("LDLMHJGLBDF",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(shot);
 
-        object DLIIJJNCIPP = Shot.GetField("DLIIJJNCIPP",
+        var DLIIJJNCIPP = Shot.GetField("DLIIJJNCIPP",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(shot);
 
@@ -467,47 +485,47 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
 
         _logger.LogDebug("FDDDFMHPPEP:");
 
-        float BAFOBJEAGMN = (float)FDDDFMHPPEP_T.GetField("BAFOBJEAGMN",
+        var BAFOBJEAGMN = (float)FDDDFMHPPEP_T.GetField("BAFOBJEAGMN",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(FDDDFMHPPEP);
         _logger.LogDebug($"BAFOBJEAGMN: {BAFOBJEAGMN}");
 
-        float GMBPBDLKJEG = (float)FDDDFMHPPEP_T.GetField("GMBPBDLKJEG",
+        var GMBPBDLKJEG = (float)FDDDFMHPPEP_T.GetField("GMBPBDLKJEG",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(FDDDFMHPPEP);
         _logger.LogDebug($"GMBPBDLKJEG: {GMBPBDLKJEG}");
 
-        float EDNNKEPLHKC = (float)FDDDFMHPPEP_T.GetField("EDNNKEPLHKC",
+        var EDNNKEPLHKC = (float)FDDDFMHPPEP_T.GetField("EDNNKEPLHKC",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(FDDDFMHPPEP);
         _logger.LogDebug($"EDNNKEPLHKC: {EDNNKEPLHKC}");
 
-        float GMGMMCENIPA = (float)FDDDFMHPPEP_T.GetField("GMGMMCENIPA",
+        var GMGMMCENIPA = (float)FDDDFMHPPEP_T.GetField("GMGMMCENIPA",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(FDDDFMHPPEP);
         _logger.LogDebug($"GMGMMCENIPA: {GMGMMCENIPA}");
 
-        float GPJCPFANDGJ = (float)FDDDFMHPPEP_T.GetField("GPJCPFANDGJ",
+        var GPJCPFANDGJ = (float)FDDDFMHPPEP_T.GetField("GPJCPFANDGJ",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(FDDDFMHPPEP);
         _logger.LogDebug($"GPJCPFANDGJ: {GPJCPFANDGJ}");
 
-        float DCCOCLOMLGA = (float)FDDDFMHPPEP_T.GetField("DCCOCLOMLGA",
+        var DCCOCLOMLGA = (float)FDDDFMHPPEP_T.GetField("DCCOCLOMLGA",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(FDDDFMHPPEP);
         _logger.LogDebug($"DCCOCLOMLGA: {DCCOCLOMLGA}");
 
         // Ball position. Skip logging this since it's well understood.
-        object GGAEPNHCLEM = FDDDFMHPPEP_T.GetField("GGAEPNHCLEM",
+        var GGAEPNHCLEM = FDDDFMHPPEP_T.GetField("GGAEPNHCLEM",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(FDDDFMHPPEP);
 
-        float CEGFOPNGEKB = (float)FDDDFMHPPEP_T.GetField("CEGFOPNGEKB",
+        var CEGFOPNGEKB = (float)FDDDFMHPPEP_T.GetField("CEGFOPNGEKB",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(FDDDFMHPPEP);
         _logger.LogDebug($"CEGFOPNGEKB: {CEGFOPNGEKB}");
 
-        float EGHIKFPPDKJ = (float)FDDDFMHPPEP_T.GetField("EGHIKFPPDKJ",
+        var EGHIKFPPDKJ = (float)FDDDFMHPPEP_T.GetField("EGHIKFPPDKJ",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(FDDDFMHPPEP);
         _logger.LogDebug($"EGHIKFPPDKJ: {EGHIKFPPDKJ}");
@@ -522,27 +540,27 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         _logger.LogDebug("GGEGJMKCNOP");
 
 
-        float BMINEIHGFLI = (float)GGEGJMKCNOP_T.GetField("BMINEIHGFLI",
+        var BMINEIHGFLI = (float)GGEGJMKCNOP_T.GetField("BMINEIHGFLI",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(GGEGJMKCNOP);
         _logger.LogDebug($"BMINEIHGFLI: {BMINEIHGFLI}");
 
-        float DHDLBIEFGMM = (float)GGEGJMKCNOP_T.GetField("DHDLBIEFGMM",
+        var DHDLBIEFGMM = (float)GGEGJMKCNOP_T.GetField("DHDLBIEFGMM",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(GGEGJMKCNOP);
         _logger.LogDebug($"DHDLBIEFGMM: {DHDLBIEFGMM}");
 
-        float OFFCCJAAMLG = (float)GGEGJMKCNOP_T.GetField("OFFCCJAAMLG",
+        var OFFCCJAAMLG = (float)GGEGJMKCNOP_T.GetField("OFFCCJAAMLG",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(GGEGJMKCNOP);
         _logger.LogDebug($"OFFCCJAAMLG: {OFFCCJAAMLG}");
 
-        float MFLAAMECNIN = (float)GGEGJMKCNOP_T.GetField("MFLAAMECNIN",
+        var MFLAAMECNIN = (float)GGEGJMKCNOP_T.GetField("MFLAAMECNIN",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(GGEGJMKCNOP);
         _logger.LogDebug($"MFLAAMECNIN: {MFLAAMECNIN}");
 
-        float AICPAFBKOPI = (float)GGEGJMKCNOP_T.GetField("AICPAFBKOPI",
+        var AICPAFBKOPI = (float)GGEGJMKCNOP_T.GetField("AICPAFBKOPI",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(GGEGJMKCNOP);
         _logger.LogDebug($"AICPAFBKOPI: {AICPAFBKOPI}");
@@ -557,32 +575,32 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         var MHLDAHLDJFE_T = MHLDAHLDJFE.GetType();
         _logger.LogDebug("MHLDAHLDJFE");
 
-        float LDBEJLOAIGA = (float)MHLDAHLDJFE_T.GetField("LDBEJLOAIGA",
+        var LDBEJLOAIGA = (float)MHLDAHLDJFE_T.GetField("LDBEJLOAIGA",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(MHLDAHLDJFE);
         _logger.LogDebug($"LDBEJLOAIGA: {LDBEJLOAIGA}");
 
-        float MOHJFAFEDJH = (float)MHLDAHLDJFE_T.GetField("MOHJFAFEDJH",
+        var MOHJFAFEDJH = (float)MHLDAHLDJFE_T.GetField("MOHJFAFEDJH",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(MHLDAHLDJFE);
         _logger.LogDebug($"MOHJFAFEDJH: {MOHJFAFEDJH}");
 
-        float ICLAHNLNFDM = (float)MHLDAHLDJFE_T.GetField("ICLAHNLNFDM",
+        var ICLAHNLNFDM = (float)MHLDAHLDJFE_T.GetField("ICLAHNLNFDM",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(MHLDAHLDJFE);
         _logger.LogDebug($"ICLAHNLNFDM: {ICLAHNLNFDM}");
 
-        float CKDBDCGNPCE = (float)MHLDAHLDJFE_T.GetField("CKDBDCGNPCE",
+        var CKDBDCGNPCE = (float)MHLDAHLDJFE_T.GetField("CKDBDCGNPCE",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(MHLDAHLDJFE);
         _logger.LogDebug($"CKDBDCGNPCE: {CKDBDCGNPCE}");
 
-        int CJLCPKGMDCO = (int)MHLDAHLDJFE_T.GetField("CJLCPKGMDCO",
+        var CJLCPKGMDCO = (int)MHLDAHLDJFE_T.GetField("CJLCPKGMDCO",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(MHLDAHLDJFE);
         _logger.LogDebug($"CJLCPKGMDCO: {CJLCPKGMDCO}");
 
-        Array BPLEKFJJBMM = (Array)MHLDAHLDJFE_T.GetField("BPLEKFJJBMM",
+        var BPLEKFJJBMM = (Array)MHLDAHLDJFE_T.GetField("BPLEKFJJBMM",
                 BindingFlags.Public | BindingFlags.Instance)?
             .GetValue(MHLDAHLDJFE);
 
@@ -596,22 +614,22 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
             var BPLEKFJJBMM_I = BPLEKFJJBMM.GetValue(i);
             var BPLEKFJJBMM_T = BPLEKFJJBMM_I.GetType();
 
-            double OJJHFHHPKEK = (double)BPLEKFJJBMM_T.GetField("OJJHFHHPKEK",
+            var OJJHFHHPKEK = (double)BPLEKFJJBMM_T.GetField("OJJHFHHPKEK",
                     BindingFlags.Public | BindingFlags.Instance)
                 .GetValue(BPLEKFJJBMM_I);
             _logger.LogDebug($"OJJHFHHPKEK: {OJJHFHHPKEK}");
 
-            double KPDFFNKIHEI = (double)BPLEKFJJBMM_T.GetField("KPDFFNKIHEI",
+            var KPDFFNKIHEI = (double)BPLEKFJJBMM_T.GetField("KPDFFNKIHEI",
                     BindingFlags.Public | BindingFlags.Instance)
                 .GetValue(BPLEKFJJBMM_I);
             _logger.LogDebug($"KPDFFNKIHEI: {KPDFFNKIHEI}");
 
-            double OLEKBKBEEIN = (double)BPLEKFJJBMM_T.GetField("OLEKBKBEEIN",
+            var OLEKBKBEEIN = (double)BPLEKFJJBMM_T.GetField("OLEKBKBEEIN",
                     BindingFlags.Public | BindingFlags.Instance)
                 .GetValue(BPLEKFJJBMM_I);
             _logger.LogDebug($"OLEKBKBEEIN: {OLEKBKBEEIN}");
 
-            double EIGPIOFLFPP = (double)BPLEKFJJBMM_T.GetField("EIGPIOFLFPP",
+            var EIGPIOFLFPP = (double)BPLEKFJJBMM_T.GetField("EIGPIOFLFPP",
                     BindingFlags.Public | BindingFlags.Instance)
                 .GetValue(BPLEKFJJBMM_I);
             _logger.LogDebug($"EIGPIOFLFPP: {EIGPIOFLFPP}");
@@ -627,32 +645,32 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         var LDLMHJGLBDF_T = LDLMHJGLBDF.GetType();
         _logger.LogDebug("LDLMHJGLBDF");
 
-        float LDBEJLOAIGA2 = (float)LDLMHJGLBDF_T.GetField("LDBEJLOAIGA",
+        var LDBEJLOAIGA2 = (float)LDLMHJGLBDF_T.GetField("LDBEJLOAIGA",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(LDLMHJGLBDF);
         _logger.LogDebug($"LDBEJLOAIGA: {LDBEJLOAIGA2}");
 
-        float MOHJFAFEDJH2 = (float)LDLMHJGLBDF_T.GetField("MOHJFAFEDJH",
+        var MOHJFAFEDJH2 = (float)LDLMHJGLBDF_T.GetField("MOHJFAFEDJH",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(LDLMHJGLBDF);
         _logger.LogDebug($"MOHJFAFEDJH: {MOHJFAFEDJH2}");
 
-        float ICLAHNLNFDM2 = (float)LDLMHJGLBDF_T.GetField("ICLAHNLNFDM",
+        var ICLAHNLNFDM2 = (float)LDLMHJGLBDF_T.GetField("ICLAHNLNFDM",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(LDLMHJGLBDF);
         _logger.LogDebug($"ICLAHNLNFDM: {ICLAHNLNFDM2}");
 
-        float CKDBDCGNPCE2 = (float)LDLMHJGLBDF_T.GetField("CKDBDCGNPCE",
+        var CKDBDCGNPCE2 = (float)LDLMHJGLBDF_T.GetField("CKDBDCGNPCE",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(LDLMHJGLBDF);
         _logger.LogDebug($"CKDBDCGNPCE: {CKDBDCGNPCE2}");
 
-        int CJLCPKGMDCO2 = (int)LDLMHJGLBDF_T.GetField("CJLCPKGMDCO",
+        var CJLCPKGMDCO2 = (int)LDLMHJGLBDF_T.GetField("CJLCPKGMDCO",
                 BindingFlags.Public | BindingFlags.Instance)
             .GetValue(LDLMHJGLBDF);
         _logger.LogDebug($"CJLCPKGMDCO: {CJLCPKGMDCO2}");
 
-        Array BPLEKFJJBMM2 = (Array)LDLMHJGLBDF_T.GetField("BPLEKFJJBMM",
+        var BPLEKFJJBMM2 = (Array)LDLMHJGLBDF_T.GetField("BPLEKFJJBMM",
                 BindingFlags.Public | BindingFlags.Instance)?
             .GetValue(LDLMHJGLBDF) ?? new object[] { };
 
@@ -666,22 +684,22 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
             var BPLEKFJJBMM_I = BPLEKFJJBMM2.GetValue(i);
             var BPLEKFJJBMM_T = BPLEKFJJBMM2.GetType();
 
-            double OJJHFHHPKEK = (double)BPLEKFJJBMM_T.GetField("OJJHFHHPKEK",
+            var OJJHFHHPKEK = (double)BPLEKFJJBMM_T.GetField("OJJHFHHPKEK",
                     BindingFlags.Public | BindingFlags.Instance)
                 .GetValue(BPLEKFJJBMM_I);
             _logger.LogDebug($"OJJHFHHPKEK: {OJJHFHHPKEK}");
 
-            double KPDFFNKIHEI = (double)BPLEKFJJBMM_T.GetField("KPDFFNKIHEI",
+            var KPDFFNKIHEI = (double)BPLEKFJJBMM_T.GetField("KPDFFNKIHEI",
                     BindingFlags.Public | BindingFlags.Instance)
                 .GetValue(BPLEKFJJBMM_I);
             _logger.LogDebug($"KPDFFNKIHEI: {KPDFFNKIHEI}");
 
-            double OLEKBKBEEIN = (double)BPLEKFJJBMM_T.GetField("OLEKBKBEEIN",
+            var OLEKBKBEEIN = (double)BPLEKFJJBMM_T.GetField("OLEKBKBEEIN",
                     BindingFlags.Public | BindingFlags.Instance)
                 .GetValue(BPLEKFJJBMM_I);
             _logger.LogDebug($"OLEKBKBEEIN: {OLEKBKBEEIN}");
 
-            double EIGPIOFLFPP = (double)BPLEKFJJBMM_T.GetField("EIGPIOFLFPP",
+            var EIGPIOFLFPP = (double)BPLEKFJJBMM_T.GetField("EIGPIOFLFPP",
                     BindingFlags.Public | BindingFlags.Instance)
                 .GetValue(BPLEKFJJBMM_I);
             _logger.LogDebug($"EIGPIOFLFPP: {EIGPIOFLFPP}");
@@ -695,7 +713,19 @@ public class OpenSkyPlusApi : AbstractOpenSkyPlusApi
         /////////////////
 
         // Shot valid data. Skip this since these values are well understood
+    }
 
+    internal void ToggleHandedness()
+    {
+        var newHandedness = _handedness == Handedness.Left ? Handedness.Right : Handedness.Left;
+        var newMode = DeviceControls.SetHandedness(newHandedness);
+        _handedness = newHandedness;
+        _logger.LogDebug($"Changing handedness to {newMode}");
+    }
+
+    internal void SoftNetworkReset()
+    {
+        DeviceControls.SoftResetNetwork();
     }
 }
 
@@ -712,7 +742,9 @@ public static class ApiSubscriber
                 OpenSkyPlusApi.GetInstance(log);
                 MessageApiLoaded?.Invoke();
             }
-            catch (OpenSkyPlusApiException) { }
+            catch (OpenSkyPlusApiException)
+            {
+            }
             catch (Exception ex)
             {
                 OpenSkyPlus.Log.LogError($"Failed to create an Api singleton instance: {ex}");

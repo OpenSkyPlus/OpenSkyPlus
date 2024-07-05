@@ -24,6 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.*" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="1.*" />
@@ -42,6 +46,28 @@
     <Reference Include="UnityEngine.UI">
       <HintPath>lib\UnityEngine.UI.dll</HintPath>
     </Reference>
+	  <Reference Include="Unity.TextMeshPro"/>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Include="logo.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Update="OpenSkyPlus.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>OpenSkyPlus.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Update="OpenSkyPlus.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>OpenSkyPlus.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   
   <Import Project="AbstractOpenSkyPlusApi\AbstractOpenSkyPlusApi.projitems" Label="Shared" />
@@ -49,6 +75,4 @@
   <Import Project="OpenSkyPlusApi\OpenSkyPlusApi.projitems" Label="Shared" />
   
   <Import Project="OpenSkyPlusConfiguration\OpenSkyPlusConfiguration.projitems" Label="Shared" />
-  
-
 </Project>

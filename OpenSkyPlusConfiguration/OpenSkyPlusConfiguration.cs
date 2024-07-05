@@ -53,7 +53,12 @@ public static class OpenSkyPlusConfiguration
                         "How strict the launch monitor be to report shots it is less confident about\r\n" +
                         "# Valid values: [Forgiving, Normal, Strict]\r\n" +
                         "# Strict will report nearly everything the monitor reads. Forgiving will report less questionable shots.")
-                    .Value
+                    .Value,
+                configFile.Bind("AppSettings",
+                    "RefreshConnectionAfterModeSwitch",
+                    true,
+                    "Indicates if a connection refresh is required when switching between modes (Normal, Putting)\r\n" +
+                    "Valid values: [true(=default), false]\r\n").Value
             );
 
             _logger.LogInfo("Configuration file loaded");

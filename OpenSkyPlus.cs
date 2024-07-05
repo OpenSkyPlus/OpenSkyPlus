@@ -5,7 +5,7 @@ using BepInEx.Logging;
 namespace OpenSkyPlus;
 
 [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
-public class OpenSkyPlus : BaseUnityPlugin
+public partial class OpenSkyPlus : BaseUnityPlugin
 {
     public static ManualLogSource Log;
     public static readonly string OpenSkyPlusPath = Path.Combine(Paths.PluginPath, PluginInfo.PLUGIN_GUID);
