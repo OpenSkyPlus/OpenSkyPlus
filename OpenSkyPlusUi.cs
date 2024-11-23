@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
-using TMPro;
 using UnityEngine.TextCore.LowLevel;
+using UnityEngine.UI;
 
 namespace OpenSkyPlus;
 
@@ -95,7 +95,7 @@ public class OpenSkyPlusUi : MonoBehaviour
     {
         var statusBox = new GameObject("MainMenuStatusBox", typeof(RectTransform), typeof(HorizontalLayoutGroup));
         statusBox.transform.SetParent(parent, false);
-        
+
         var image = statusBox.AddComponent<Image>();
         image.color = Color.black;
 
@@ -164,7 +164,6 @@ public class OpenSkyPlusUi : MonoBehaviour
         string[] fontPaths = Font.GetPathsToOSFonts();
         // Create new font object from one of those paths
         var font = fontPaths.Where(f => f.ToLowerInvariant().Contains("arial.ttf")).First();
-        LogToConsole($"Font: {font}");
         Font osFont = new Font(font);
         // Create new dynamic font asset
         TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(osFont, 90, 9, GlyphRenderMode.SDFAA, 1024, 1024);
