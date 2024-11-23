@@ -1,12 +1,12 @@
+using BepInEx.Logging;
+using HarmonyLib;
+using OpenSkyPlusApi;
 using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using BepInEx.Logging;
-using HarmonyLib;
-using OpenSkyPlusApi;
 
 namespace OpenSkyPlus;
 
@@ -52,7 +52,7 @@ internal static class DeviceControls
             if (launchMonitorAppVersion != null)
                 _logger.LogDebug("Assembly-CSharp.dll is loaded");
             else
-                Terminate("Could not find Assembly-CSharp.dll. Check the app installation and try again.");
+                throw new OpenSkyPlusApiException("Could not find Assembly-CSharp.dll. Check the app installation and try again.");
 
             if (launchMonitorAppVersion != OpenSkyPlusApi.SupportedVersion)
             {
@@ -64,11 +64,11 @@ internal static class DeviceControls
         }
         catch
         {
-            Terminate($"{_config.AppSettings.LaunchMonitor} assemblies not found. Check the app path and try again.");
+            throw new OpenSkyPlusApiException($"{_config.AppSettings.LaunchMonitor} assemblies not found. Check the app path and try again.");
         }
 
         // THIS LINE CHECKS TO MAKE SURE THE LICENSE IS VALID. DO NOT DELETE THIS LINE OR THE CHECK WILL NOT WORK!
-        if (!CheckLicense()) Terminate("Could not verify app license");
+        if (!CheckLicense()) { throw new OpenSkyPlusApiException($"Could not verify license for {_config.AppSettings.LaunchMonitor}. This application will not work without a valid license.");}
 
         try
         {
@@ -78,7 +78,7 @@ internal static class DeviceControls
         catch (Exception ex)
         {
             _logger.LogFatal($"Could not initialize {_config.AppSettings.LaunchMonitor} wrapper functions:\n{ex}");
-            Terminate($"Failed to locate {_config.AppSettings.LaunchMonitor} monitor wrapper functions.\n" +
+            throw new OpenSkyPlusApiException($"Failed to locate {_config.AppSettings.LaunchMonitor} monitor wrapper functions.\n" +
                       $"Is this Api compatible with the version {_config.AppSettings.LaunchMonitor}?");
         }
 
@@ -114,12 +114,6 @@ internal static class DeviceControls
 
             return false;
         }
-    }
-
-    private static void Terminate(string ex)
-    {
-        _logger.LogFatal($"Failed to load OpenSkyPlus Api:\n{ex}");
-        throw new OpenSkyPlusApiException("Couldn't load OpenSkyPlus Api. Check the log for details.");
     }
 
     private static void InitializeLaunchMonitorWrapper()

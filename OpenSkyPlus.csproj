@@ -6,7 +6,7 @@
 	<TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>OpenSkyPlus</AssemblyName>
     <Description>OpenSkyPlus for [LaunchMonitor]</Description>
-    <Version>1.0.1</Version>
+    <Version>1.1.1</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -32,7 +32,7 @@
     <PackageReference Include="BepInEx.Core" Version="5.*" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="1.*" />
     <PackageReference Include="System.Runtime.Serialization.Json" Version="4.3.0" />
-    <PackageReference Include="System.Text.Json" Version="8.0.1" />
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
     <PackageReference Include="UnityEngine.Modules" Version="2020.3.8" IncludeAssets="compile" />
   </ItemGroup>
   
@@ -46,7 +46,7 @@
     <Reference Include="UnityEngine.UI">
       <HintPath>lib\UnityEngine.UI.dll</HintPath>
     </Reference>
-	  <Reference Include="Unity.TextMeshPro"/>
+	  <Reference Include="Unity.TextMeshPro" />
   </ItemGroup>
   
   <ItemGroup>

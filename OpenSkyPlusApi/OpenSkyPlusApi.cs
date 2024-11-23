@@ -1,9 +1,9 @@
-﻿using System;
+﻿using BepInEx.Logging;
+using OpenSkyPlusApi;
+using System;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using BepInEx.Logging;
-using OpenSkyPlusApi;
 
 namespace OpenSkyPlus;
 
@@ -742,12 +742,13 @@ public static class ApiSubscriber
                 OpenSkyPlusApi.GetInstance(log);
                 MessageApiLoaded?.Invoke();
             }
-            catch (OpenSkyPlusApiException)
+            catch (OpenSkyPlusApiException ex)
             {
+                OpenSkyPlus.Log.LogFatal(ex.Message);
             }
             catch (Exception ex)
             {
-                OpenSkyPlus.Log.LogError($"Failed to create an Api singleton instance: {ex}");
+                OpenSkyPlus.Log.LogFatal($"Failed to create an Api singleton instance: {ex}");
             }
         };
     }
